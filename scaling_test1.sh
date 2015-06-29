@@ -1,9 +1,9 @@
 #!/bin/bash -x
 #
-#PJM --rsc-list "rscgrp=short"
-#PJM --rsc-list "node=10"
-#PJM --rsc-list "elapse=01:00:00"
-#PJM --mpi "proc=160"
+#PJM --rsc-list "rscgrp=small"
+#PJM --rsc-list "node=120"
+#PJM --rsc-list "elapse=00:45:00"
+#PJM --mpi "proc=960"
 #PJM --stg-transfiles all
 #PJM --mpi "use-rankdir"
 
@@ -13,15 +13,18 @@
 #PJM --stgin "rank=* ./result/* %r:./result/"
 #PJM --stgin "rank=* ./change/* %r:./change/"
 
-#PJM --stgin "rank=* /home/e16005/neuron_kplus/specials/sparc64/special %r:./"
+#PJM --stgin "rank=* /home/hp120263/k01792/neuron_kplus/specials/sparc64/special %r:./"
+#PJM --stgin "rank=* /home/hp120263/k01792/neuron_kplus/stgin/* %r:./"
 
-#PJM --stgout "rank=* %r:./result/* /group/gh16/e16005/0108/result/sw/%j/"
-#PJM --stgout "rank=* %r:./change/* /group/gh16/e16005/0108/change/sw/%j/"
+#PJM --stgout "rank=* %r:./result/* /data/hp120263/fukuda/single_scaling/result/%j/"
+#PJM --stgout "rank=* %r:./change/* /data/hp120263/fukuda/single_scaling/change/%j/"
 
 #PJM -s
 #PJM -m "e"
+#PJM --mail-list "fukuda@brain.imi.i.u-tokyo.ac.jp"
 #
 
+. /work/system/Env_base
 
 #NRNIV="../../../neuron_kplus/specials/sparc64/special -mpi"
 NRNIV="./special -mpi"
@@ -39,7 +42,7 @@ NRNOPT=\
 " -c LEARNING_RATE=0.0001"\
 " -c OUT1_SPON_I_K=0.15"\
 " -c OUT1_SPON_I_T=0.3"\
-" -c LTD=0.8"
+" -c LTD=1.25"
 
 
 LPG="lpgparm -t 4MB -s 4MB -d 4MB -p 4MB"
