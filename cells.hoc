@@ -19,15 +19,15 @@ proc init(){local x, y, z, i
 	nseg = 10
 	cm = 1
 	insert GPeA
-	gnabar_GPeA = 0.12//0.12//0.19
+	gnabar_GPeA = 0.12
 	
-	gkdrbar_GPeA = 0.005//0.06
-	gl_GPeA = 0.0003//0.0001
-	gcatbar_GPeA = 0.0001//0.005
-	gkcabar_GPeA = 0.002//0.004
+	gkdrbar_GPeA = 0.005
+	gl_GPeA = 0.0003
+	gcatbar_GPeA = 0.0001
+	gkcabar_GPeA = 0.002
 	ena_GPeA = 55
 	ek_GPeA = -70		
-	el_GPeA = -50//-54.3
+	el_GPeA = -50
 	eca_GPeA = 124
     }
     axon {
@@ -39,22 +39,14 @@ proc init(){local x, y, z, i
     //the list for accumulating the synapse for injecting the stimuli
     synlist = new List()
     soma {
-	esyn = new Exp2Syn(0.5)//Exp2Syn(0.8)
+	esyn = new Exp2Syn(0.5)
 	synlist.append(esyn)
-	esyn_for_spon = new Exp2Syn(0.5)//Exp2Syn(0.85)
+	esyn_for_spon = new Exp2Syn(0.5)
 	synlist.append(esyn_for_spon)
     }
     //the list for accumulating the synapses for connection between cells
     synlist_e = new List()
     synlist_i = new List()
-    /*
-    cai0_ca_ion = 5e-6
-    cao0_ca_ion = 2
-    ki0_k_ion = 105
-    ko0_k_ion = 3
-    nao0_na_ion = 108
-    nai0_na_ion = 10
-    */
 }
 
 obfunc connect2target() { localobj nc
@@ -87,34 +79,23 @@ obfunc makeSyn() {local targetno, hostno, num_ecell, num_vta, rw_flag, start_i, 
     rw_flag = $5
     start_i = $6
     end_i = $7
-    //if(targetno<num_ecell){
+
     if(hostno<num_ecell){
 	soma {
 	    syn_ = new ExpSynSTDP(0.5)
-	    //synlist.append(syn_)
 	    synlist_e.append(syn_)
 	}
 	//num_vta means the initial vtap points...
 	if(rw_flag){
 	    if(targetno<num_vta || (targetno>=start_i && targetno<end_i)){
-		
-		//if(targetno>=start_i && targetno<end_i){
-		    //printf("targetno = %d, vta = %d, start = %d, end = %d\n",targetno,num_vta,start_i,end_i)
-		//}
 		syn_.forSpike = 2
 	    }
-	}/*
-	if(hostno>=num_ecell){
-	    syn_.e=-100
-	}*/
+	}
     }else{
 	soma {
 	    syn_ = new Exp2Syn(0.5)
-	    //synlist.append(syn_)
 	    synlist_i.append(syn_)
-	    // if(hostno>=num_ecell){
 	    syn_.e = -100
-	    // }
 	}
     }
     return syn_

@@ -60,31 +60,6 @@ proc read_mat() {local i,j,k,num_ecell, num_out1
     con_i2o2.scanf(f,num_out2,num_ecell)
     f.close()
     
-    /*
-    //read the stimulus pattern
-    for i=1, data_num {
-	f = new File()
-	sprint(filename,"./data/stim%d.dat",i)
-	f.ropen(filename)
-	if(i==1){
-	    stim_data1 = new Vector()
-	    stim_data1.scanf(f,num_ecell)
-	}else if(i==2){
-	    stim_data2 = new Vector()
-	    stim_data2.scanf(f,num_ecell)
-	}else if(i==3){
-	    stim_data3 = new Vector()
-	    stim_data3.scanf(f,num_ecell)
-	}else if(i==4){
-	    stim_data4 = new Vector()
-	    stim_data4.scanf(f,num_ecell)
-	}else{
-	    stim_data5 = new Vector()
-	    stim_data5.scanf(f,num_ecell)
-	}
-	f.close()
-    }
-    */
     for i=0, data_num-1{
         f = new File()
         sprint(filename,"./data/stim%d.dat",i+1)
@@ -100,18 +75,6 @@ proc read_mat() {local i,j,k,num_ecell, num_out1
     stim_order.scanf(f,data_num*LEARNING_TIMES)
     f.close()
 
-    
-    /*
-    for i=0, con.ncol-1 {
-	for j=0, con.nrow-1 {
-	    for(k=0;k<con.x[i][j];k=k+1){
-		printf("%d\t",j)
-	    }
-	}
-	printf("\n")
-    }
-    */
-    
 }
 
 proc read_weight(){local i, nc_input, nc_out1, nc_out2, nc_i2o
