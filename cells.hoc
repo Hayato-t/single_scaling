@@ -1,0 +1,159 @@
+load_file("nrngui.hoc")
+begintemplate HHneuron
+
+public soma, axon, synlist, connect2target, connectNearCells, connectFarCells, makeSyn, synlist_e, synlist_i
+create soma, axon
+objref esyn, esyn_for_spon, esynSTDP
+objref synlist_e, synlist_i, synlist
+
+proc init(){local x, y, z, i
+    x=$1 y=$2 z=$3
+    connect axon(0), soma(1)
+    soma {
+	pt3dclear() pt3dadd(0+x,0+y,0+z,12) pt3dadd(15+x,0+y,0+z,12)
+    }
+    
+    soma { 
+	L = 30
+	diam = 30
+	nseg = 10
+	cm = 1
+	insert GPeA
+	gnabar_GPeA = 0.12//0.12//0.19
+	
+	gkdrbar_GPeA = 0.005//0.06
+	gl_GPeA = 0.0003//0.0001
+	gcatbar_GPeA = 0.0001//0.005
+	gkcabar_GPeA = 0.002//0.004
+	ena_GPeA = 55
+	ek_GPeA = -70		
+	el_GPeA = -50//-54.3
+	eca_GPeA = 124
+    }
+    axon {
+	L = 500
+	diam = 2
+	nseg = 10
+	insert hh
+    }
+    //the list for accumulating the synapse for injecting the stimuli
+    synlist = new List()
+    soma {
+	esyn = new Exp2Syn(0.5)//Exp2Syn(0.8)
+	synlist.append(esyn)
+	esyn_for_spon = new Exp2Syn(0.5)//Exp2Syn(0.85)
+	synlist.append(esyn_for_spon)
+    }
+    //the list for accumulating the synapses for connection between cells
+    synlist_e = new List()
+    synlist_i = new List()
+    /*
+    cai0_ca_ion = 5e-6
+    cao0_ca_ion = 2
+    ki0_k_ion = 105
+    ko0_k_ion = 3
+    nao0_na_ion = 108
+    nai0_na_ion = 10
+    */
+}
+
+obfunc connect2target() { localobj nc
+    soma nc = new NetCon(&v(0.5), $o1)
+    nc.threshold = 10
+    if(numarg()==2){ $o2 = nc}
+    return nc
+}
+
+obfunc connectNearCells() { localobj nc
+    axon nc = new NetCon(&v(0.5), $o1)
+    nc.threshold = 10
+    if(numarg()==2){ $o2 = nc}
+    return nc
+}
+obfunc connectFarCells() { localobj nc
+    axon nc = new NetCon(&v(1), $o1)
+    nc.threshold = 10
+    if(numarg()==2){ $o2 = nc}
+    return nc
+}
+
+objref syn_
+
+obfunc makeSyn() {local targetno, hostno, num_ecell, num_vta, rw_flag, start_i, end_i
+    targetno = $1
+    hostno = $2
+    num_ecell = $3
+    num_vta = $4
+    rw_flag = $5
+    start_i = $6
+    end_i = $7
+    //if(targetno<num_ecell){
+    if(hostno<num_ecell){
+	soma {
+	    syn_ = new ExpSynSTDP(0.5)
+	    //synlist.append(syn_)
+	    synlist_e.append(syn_)
+	}
+	//num_vta means the initial vtap points...
+	if(rw_flag){
+	    if(targetno<num_vta || (targetno>=start_i && targetno<end_i)){
+		
+		//if(targetno>=start_i && targetno<end_i){
+		    //printf("targetno = %d, vta = %d, start = %d, end = %d\n",targetno,num_vta,start_i,end_i)
+		//}
+		syn_.forSpike = 2
+	    }
+	}/*
+	if(hostno>=num_ecell){
+	    syn_.e=-100
+	}*/
+    }else{
+	soma {
+	    syn_ = new Exp2Syn(0.5)
+	    //synlist.append(syn_)
+	    synlist_i.append(syn_)
+	    // if(hostno>=num_ecell){
+	    syn_.e = -100
+	    // }
+	}
+    }
+    return syn_
+}
+
+
+endtemplate HHneuron
+
+objref cells
+objref recordSpike
+
+proc makeCells(){local i, num_cell localobj cell, nc, nil
+    num_cell = $1
+    cells = new List()
+   
+    for (i=pc.id; i<num_cell; i = i + pc.nhost) {
+
+	cell = new HHneuron(160*int(i/10),20*(i%10),0)
+	
+	cells.append(cell)
+	pc.set_gid2node(i,pc.id)
+	nc = cell.connect2target(nil)
+	nc.weight = 1
+	pc.cell(i,nc)
+    }
+}
+
+proc makeConvert(){local i, ncell localobj nc, nil
+    ncell = $1
+    for(i=0;i<ncell;i+=1){
+	if(pc.gid_exists(i)){
+	    nc = pc.gid2cell(i).connectNearCells(nil)
+	    nc.weight = 1
+	    pc.set_gid2node(ncell+i*2,pc.id)	    
+	    pc.cell(ncell+i*2,nc)
+	    nc = pc.gid2cell(i).connectFarCells(nil)
+	    nc.weight = 1
+	    pc.set_gid2node(ncell+i*2+1,pc.id)
+	    pc.cell(ncell+i*2+1,nc)
+	}
+    }
+}

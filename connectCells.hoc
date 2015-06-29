@@ -1,0 +1,369 @@
+load_file("nrngui.hoc")
+//load_file("read.hoc")
+
+objref nclist, nclist_out1, nclist_out2,nclist_i2o, r
+double count[NCELL]
+double rec_connect[NCELL][NSYN]
+
+
+
+
+proc initCount() { local i
+    for i=0, cells.count-1 {
+	count[i] = 0
+    }
+}
+
+proc checkgid() {local i, exist
+    for i=0, NCELL-1 {
+	exist = pc.gid_exists(i)
+	if(exist){
+	    printf("cell %d exists!!\n",i)
+	}
+	//printf("%dth result is %d\n",i,exist)
+    }
+}
+
+//objref confirm
+
+
+proc connectInputCells() { local i, j, k, targid, num_ecell,num_vta, num_cell, num_cell_full localobj src, target, syn, nc, nil
+    num_ecell = $1
+    num_vta = $2
+    num_cell = $3
+    num_cell_full = $4
+    nclist = new List()
+    r = new Random(25525)
+    
+    num_vta = 0
+/*    
+    confirm = new Matrix()
+    confirm.resize(NCELL,NCELL)
+    for i=0,NCELL-1{
+	for j=0,NCELL-1{
+	    confirm.x[i][j]=0
+	}
+    }
+    
+    */
+    mem = -1
+    //read_mat()
+    for i=0, num_ecell-1{
+	//connect to excitatory cells
+	if(pc.gid_exists(i)){
+	    for j=0, num_ecell-1{
+		//printf("con.x[%d][%d] = %d ",i,j,con.x[i][j])
+		//for(k=0;k<con.x[i][j];k=k+1){
+		//confirm.x[i][j] = confirm.x[i][j] + 1
+		if(con.x[i][j]){
+		    //from excitatory cells
+		    for k=0, 3 {
+			syn = pc.gid2cell(i).makeSyn(i,j,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect((con.x[i][j]-1)+j*2+num_cell_full,syn)//num_cell -> num_cell_full
+			//printf("my host id = %d, parent(pre) cell id = %d(e->e)\n",pc.id,j)
+			nclist.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = 0.001*r.uniform(0,1)//0.0002*r.uniform(0,1)//0.01
+		    }
+		    //from inhibitory cells
+		    syn = pc.gid2cell(i).makeSyn(i,j+num_ecell,num_ecell,num_vta,0,0,0)
+		    nc = pc.gid_connect((con.x[i][j]-1)+(j+num_ecell)*2+num_cell_full,syn)
+//		    printf("my parent cell id = %d(i->e)\n",j+num_ecell_full)
+		    nclist.append(nc)
+		    nc.threshold=0
+		    nc.delay = 0.1
+		    nc.weight = 0.1//0.03
+		    
+		    //}
+		    
+		}
+		//printf("\n")
+	    }
+	}
+	//connect to inhibitory cells
+	if(pc.gid_exists(i+num_ecell)){
+	    for j=0, num_ecell-1 {
+		if(con.x[i][j]){
+		    //from excitatory cells
+		    for k=0, 3 {
+			syn = pc.gid2cell(i+num_ecell).makeSyn(i+num_ecell,j,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect((con.x[i][j]-1)+j*2+num_cell_full,syn)
+			//printf("my parent cell id = %d(e->i)\n",j)
+			nclist.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = 0.001*r.uniform(0,1)//0.0002*r.uniform(0,1)
+		    }
+		}
+	    }
+	    //if excitatory cell above me (inhibiroty cell) is fired, i wanna also fire
+	    syn = pc.gid2cell(i+num_ecell).makeSyn(i+num_ecell,i+num_ecell,num_ecell,num_vta,0,0,0)
+	    syn.e = 0
+	    nc = pc.gid_connect(i,syn)
+	    nclist.append(nc)
+	    nc.threshold = 0
+	    nc.delay = 0.1//0.025
+	    nc.weight = 0.02
+	}
+    }
+}
+
+/////////////////////////////////////////////////////////TODO////////////////////////////////////////////////////////////////
+//shold be modified to the manner from the single compartment to the double compartmentmodel////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+proc connectOutput1Cells() { local i, j, k,l, pargid, num_ecell_out1, num_syn, num_vta, num_cell_out1, num_cell_input, num_cell_full, cellid localobj src, target, syn, nc, nil
+    num_ecell_out1 = $1
+    num_vta = $2
+    num_cell_out1 = $3
+    num_cell_input = $4
+    num_cell_full = $5
+    nclist_out1 = new List()
+    r = new Random(25525)
+/*    
+    confirm = new Matrix()
+    confirm.resize(NCELL,NCELL)
+    for i=0,NCELL-1{
+	for j=0,NCELL-1{
+	    confirm.x[i][j]=0
+	}
+    }
+    
+    */
+    mem = -1
+    //read_mat()
+    
+    //the association with con is preserved, but the fact connect index is shifted by num_cell_input
+    //when syn is made, the num in the out2 pool is used 
+    //when connecting other cells, the num in the full pool is used
+     for i=0, num_cell_out1-1{
+	if(pc.gid_exists(i+num_cell_input)){
+	    for j=0, num_cell_out1-1{
+		//printf("con.x[%d][%d] = %d ",i,j,con.x[i][j])
+		for(k=0;k<con_out1.x[i][j];k=k+1){
+		    //confirm.x[i][j] = confirm.x[i][j] + 1
+		    syn = pc.gid2cell(i+num_cell_input).makeSyn(i,j,num_ecell_out1,int(num_ecell_out1/5),1,num_ecell_out1,num_ecell_out1+int(num_cell_out1/5)-int(num_ecell_out1/5))//num_ecell_out1+int((num_cell_out1-num_ecell_out1)/5))//num_vta,1)
+		    nc = pc.gid_connect((j+num_cell_input)*2+1+num_cell_full,syn)
+		    //printf("my host id = %d, parent(pre) cell id = %d\n",pc.id,j)
+		    nclist_out1.append(nc)
+		    nc.threshold = 0
+		    nc.delay = 0.1
+		    if(j<num_ecell_out1){
+			nc.weight = OUT1_E*r.uniform(0,1)//0.002*r.uniform(0,1)//0.0002*r.uniform(0,1)//0.01
+		    }else{
+			nc.weight = OUT1_I//0.02//0.05//7//0.05//in ganglion, test 0.1//0.05//0.03//0.1
+		    }
+		    /*
+		    if(j==0){
+			syn = pc.gid2cell(i+num_cell_input).makeSyn(i,j+num_ecell_out1,num_ecell_out1,64,1,num_ecell_out1,num_ecell_out1+int((num_cell_out1-num_cell_out1)/5))
+			syn.e = 0
+			nc = pc.gid_connect((j+num_cell_input)*2+1+num_cell_full,syn)
+			nclist_out1.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = 0.04
+		    }
+		    */
+		}
+	    }
+	    //printf("\n")
+	}
+    }
+}
+
+proc connectOutput2Cells() { local i, j, k,l, pargid, num_ecell_out2, num_syn, num_vta, num_cell_out2, num_cell_i_o1, num_cell_full, cellid localobj src, target, syn, nc, nil
+    num_ecell_out2 = $1
+    num_vta = $2
+    num_cell_out2 = $3
+    num_cell_i_o1 = $4
+    num_cell_full = $5
+    nclist_out2 = new List()
+    r = new Random(25525)
+/*    
+    confirm = new Matrix()
+    confirm.resize(NCELL,NCELL)
+    for i=0,NCELL-1{
+	for j=0,NCELL-1{
+	    confirm.x[i][j]=0
+	}
+    }
+    
+    */
+    mem = -1
+    //read_mat()
+    
+    //the association with con is preserved, but the fact connect index is shifted by num_cell_input
+    //when syn is made, the num in the out2 pool is used 
+    //when connecting other cells, the num in the full pool is used
+    for i=0, num_cell_out2-1{
+	if(pc.gid_exists(i+num_cell_i_o1)){
+	    for j=0, num_cell_out2-1{
+		//printf("con.x[%d][%d] = %d ",i,j,con.x[i][j])
+		for(k=0;k<con_out2.x[i][j];k=k+1){
+		    //confirm.x[i][j] = confirm.x[i][j] + 1
+		    syn = pc.gid2cell(i+num_cell_i_o1).makeSyn(i,j,num_ecell_out2,int(num_ecell_out2/4),1,num_ecell_out2,num_ecell_out2+int((num_cell_out2-num_ecell_out2)/4))//num_vta,1)
+		    nc = pc.gid_connect((j+num_cell_i_o1)*2+1+num_cell_full,syn)
+//		    printf("my host id = %d, parent(pre) cell id = %d\n",pc.id,j)
+		    nclist_out2.append(nc)
+		    nc.threshold = 0
+		    nc.delay = 0.1
+		    if(j<num_ecell_out2){
+			nc.weight = 0.002*r.uniform(0,1)//0.0002*r.uniform(0,1)//0.01
+		    }else{
+			nc.weight = 0.05//3//0.1
+		    }
+		    /*
+		    if(j==0){
+			syn = pc.gid2cell(i+num_cell_i_o1).makeSyn(i,j+num_ecell_out2,num_ecell_out2,40,1,num_ecell_out2,num_ecell_out2+int((num_cell_out2-num_cell_out2)/5))
+			syn.e = 0
+			nc = pc.gid_connect((j+num_cell_i_o1)*2+1+num_cell_full,syn)
+			nclist_out1.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = 0.02
+		    }
+		    */
+		}
+	    }
+	    //printf("\n")
+	}
+    }
+}
+
+proc connectI2O(){local i, j, k, l, num_ecell, num_cell_out1, num_ecell_out1, num_cell_out2, num_ecell_out2, num_vta, num_cell_input, num_cell_full, num_cell_i_o1 localobj nc, syn
+    num_ecell = $1
+    num_cell_out1 = $2
+    num_ecell_out1 = $3
+    num_cell_out2 = $4
+    num_ecell_out2 =$5
+    num_vta = $6
+    num_cell_input = $7
+    
+    num_cell_i_o1 = num_cell_input + num_cell_out1
+    num_cell_full = num_cell_i_o1  + num_cell_out2
+    
+    nclist_i2o = new List()
+    
+    for i=0, num_cell_out1-1 {
+	if(pc.gid_exists(num_cell_input+i)){
+	    for j=0, num_ecell-1 {
+		for(k=0;k<con_i2o1.x[i][j];k=k+1){
+		    for l=0, 3 {
+			syn = pc.gid2cell(i+num_cell_input).makeSyn(i+num_cell_input,j,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect(j*2+1+num_cell_full,syn)
+			nclist_i2o.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = IO_E*r.uniform(0,1)//0.001*r.uniform(0,1)//0.005*r.uniform(0,1)//0.008*r.uniform(0,1)//0.002*r.uniform(0,1)//0.0002*r.uniform(0,1)
+			/*
+			if(j==0){
+			    syn = pc.gid2cell(i+num_cell_input).makeSyn(i+num_cell_input,j+num_ecell,num_ecell,num_vta,0,0,0)
+			    syn.e = 10
+			    nc = pc.gid_connect(j*2+1+num_cell_full,syn)
+			    nclist_i2o.append(nc)
+			    nc.threshold = 0
+			    nc.delay = 0.1
+			    nc.weight = 0.02
+			}
+			*/
+		    }
+		    //add here first!!
+		    //if(i<num_ecell_out1){
+		    
+		    
+			syn = pc.gid2cell(i+num_cell_input).makeSyn(i+num_cell_input,j+num_ecell,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect((j+num_ecell)*2+1+num_cell_full,syn)
+			nclist_i2o.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			if(i<num_ecell_out1){
+			    nc.weight = IO_I2E//0.008//0.03//7//in test310.05//in gang test 0.1 now
+			}else{
+			    nc.weight = IO_I2I//0.005//0.01
+			}
+			
+		    //}
+		    //end adding section
+		}
+	    }
+	}
+    }
+    
+    for i=0, num_cell_out2-1 {
+	if(pc.gid_exists(i+num_cell_i_o1)){
+	    for j=0, num_ecell-1{
+		for(k=0;k<con_i2o2.x[i][j];k=k+1){
+		    for l=0, 3 {
+			syn = pc.gid2cell(i+num_cell_i_o1).makeSyn(i+num_cell_i_o1,j,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect(j*2+1+num_cell_full,syn)
+			nclist_i2o.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			nc.weight = 0.002*r.uniform(0,1)//0.0002*r.uniform(0,1)//0.03
+			
+			/*
+			if(j==0){
+			    syn = pc.gid2cell(i+num_cell_i_o1).makeSyn(i+num_cell_i_o1,j+num_ecell,num_ecell,num_vta,0,0,0)
+			    syn.e = 10
+			    nc = pc.gid_connect(j*2+1+num_cell_full,syn)
+			    nclist_i2o.append(nc)
+			    nc.threshold = 0
+			    nc.delay = 0.1
+			    nc.weight = 0.02
+			}
+			*/
+		    }
+		    //if(i<num_ecell_out2){
+			syn = pc.gid2cell(i+num_cell_i_o1).makeSyn(i+num_cell_i_o1,j+num_ecell,num_ecell,num_vta,0,0,0)
+			nc = pc.gid_connect((j+num_ecell)*2+1+num_cell_full,syn)
+			nclist_i2o.append(nc)
+			nc.threshold = 0
+			nc.delay = 0.1
+			if(i<num_ecell_out2){
+			    nc.weight = 0.03//0.03
+			}else{
+			    nc.weight = 0.01
+			}
+		    //}
+		}
+	    }
+	}
+    }
+}
+
+proc subst(){local i
+    for i=0, nclist.count-1 {
+	nclist.o(i).weight = weight_input.x(i)
+    }
+    
+    for i=0, nclist_out1.count-1{
+	nclist_out1.o(i).weight = weight_out1.x(i)
+    }
+    
+    for i=0, nclist_out2.count-1{
+	nclist_out2.o(i).weight = weight_out2.x(i)
+    }
+    
+    for i=0, nclist_i2o.count-1 {
+	nclist_i2o.o(i).weight = weight_i2o.x(i)
+    }
+}
+
+proc off_plast(){local i, j
+    for i=0, cells.count-1{
+	for j=0, cells.o(i).synlist_e.count-1{
+	    cells.o(i).synlist_e.o(j).d=0
+	    cells.o(i).synlist_e.o(j).p=0
+	}
+    }
+}
+
+proc set_LR(){local i, j
+    for i=0, cells.count-1 {
+	for j=0, cells.o(i).synlist_e.count-1{
+	    cells.o(i).synlist_e.o(j).LR = LEARNING_RATE
+	    cells.o(i).synlist_e.o(j).ltd = LTD
+	}
+    }
+}
