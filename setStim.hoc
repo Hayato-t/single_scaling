@@ -20,6 +20,16 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     l_times = $7
     stim_start = $8
     num_cell_full = $9
+
+    num_cell_out1 = $10
+    num_cell_out1_e = $11
+    num_cell_out2 = $12
+    num_cell_out2_e = $13
+    num_cell_input = $14
+    num_section_out1_e = $15
+    nun_section_out1_i = $16
+    
+    
     
     stim_dur = stimInt*stimNum
     stim_set_interval = (stim_dur + 100) * 5
@@ -29,17 +39,17 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     us = new List()
     
     for cls=0, data_num*l_times-1{
-	for(i=0;i<400;i+=1){
-	    if((i>=64*stim_order.x(cls) && i<64*(stim_order.x(cls)+1)) || (i>=320+16*stim_order.x(cls) && i<336+16*stim_order.x(cls))){
-		if(pc.gid_exists(i+512)){
-		    pc.gid2cell(i+512).soma {
+	for(i=0;i<num_cell_out1;i+=1){
+	    if((i>=num_section_out1_e*stim_order.x(cls) && i<num_section_out1_e*(stim_order.x(cls)+1)) || (i>=num_cell_out1_e+num_section_out1_i*stim_order.x(cls) && i<nun_cell_out1_e+num_section_out1_i+num_section_out1_i*stim_order.x(cls))){
+		if(pc.gid_exists(i+num_cell_input)){
+		    pc.gid2cell(i+num_cell_input).soma {
 			    us_tmp = new NetStim()
 			    us_tmp.start = stim_start+5+stim_interval*cls
 			    us_tmp.number = stim_num
 			    us_tmp.interval = stim_int
 			    us_tmp.noise = 0.001
 			    us.append(us_tmp)
-			    nc = new NetCon(us_tmp,pc.gid2cell(i+512).synlist.object(1),0,0.1,0.05)
+			    nc = new NetCon(us_tmp,pc.gid2cell(i+num_cell_input).synlist.object(1),0,0.1,0.05)
 			    nclist_us.append(nc)
 		    }
 		}
@@ -93,7 +103,7 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     sponFire = new List()
     
     for i=0, num_cell_full-1 {
-	if(i<256 || i>=512){
+	if(i<num_cell_input_e || i>=num_cell_input){
 	    if(pc.gid_exists(i)){
 		pc.gid2cell(i).soma{
 		    spon_tmp = new GammaNoise(0.85)
@@ -101,14 +111,14 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
 		    spon_tmp.dur = dur
 		    spon_tmp.del = 20
 		    spon_tmp.forseed = i
-		    if((i>=832 && i<912) && (i>=992 && i<1012)){
+		    if((i>=(num_cell_input+num_cell_out1_e) && i<(num_cell_input+num_cell_out1)) && (i>=num_cell_input+num_cell_out1+num_cell_out2_e && i<num_cell_full)){
 			spon_tmp.KAPPA = OUT1_SPON_I_K
 			spon_tmp.THETA = OUT1_SPON_I_T
 			
-		    }else if(i>=512 && i<832){
+		    }else if(i>=num_cell_input && i<num_cell_input+num_cell_out1_e){
 			spon_tmp.KAPPA = OUT1_SPON_E_K
 			spon_tmp.THETA = OUT1_SPON_E_T
-		    }else if(i>=912 && i<992){
+		    }else if(i>=num_cell_input+num_cell_out1 && i<num_cell_input+num_cell_e_out2){
 			spon_tmp.KAPPA = 0.15
 		    }else{
 			spon_tmp.KAPPA = 0.11
