@@ -22,7 +22,7 @@ proc read_mat() {local i,j,k,num_ecell, num_out1
     num_out1 = $2
     num_out2 = $3
     
-    
+    //printf("num_ecell = %d, num_out1=%d, num_out2=%d\n",num_ecell,num_out1,num_out2)
     
     //read the connection file of input layer
     con = new Matrix()

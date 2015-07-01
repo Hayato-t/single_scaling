@@ -10,7 +10,7 @@ load_file("nrngui.hoc")
 objref nclist_us, nclist_spon, nclist_cs
 objref  us, cs, sponFire
 
-proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_input, l_times, stim_dur, stim_start, stim_set_interval, stim_interval, cls localobj nc, us_tmp, cs_tmp, spon_tmp
+proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_input, l_times, stim_dur, stim_start, stim_set_interval, stim_interval, cls, num_cell_out1, num_cell_out1_e, num_cell_out2, num_cell_out2_e, num_cell_input, num_section_out1_e, num_section_out1_i localobj nc, us_tmp, cs_tmp, spon_tmp
     stim_num = $1 //stim_dur = $1
     num_vta = $2
     dur = $3
@@ -27,7 +27,7 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     num_cell_out2_e = $13
     num_cell_input = $14
     num_section_out1_e = $15
-    nun_section_out1_i = $16
+    num_section_out1_i = $16
     
     
     
@@ -40,7 +40,7 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     
     for cls=0, data_num*l_times-1{
 	for(i=0;i<num_cell_out1;i+=1){
-	    if((i>=num_section_out1_e*stim_order.x(cls) && i<num_section_out1_e*(stim_order.x(cls)+1)) || (i>=num_cell_out1_e+num_section_out1_i*stim_order.x(cls) && i<nun_cell_out1_e+num_section_out1_i+num_section_out1_i*stim_order.x(cls))){
+	    if((i>=num_section_out1_e*stim_order.x(cls) && i<num_section_out1_e*(stim_order.x(cls)+1)) || (i>=num_cell_out1_e+num_section_out1_i*stim_order.x(cls) && i<num_cell_out1_e+num_section_out1_i+num_section_out1_i*stim_order.x(cls))){
 		if(pc.gid_exists(i+num_cell_input)){
 		    pc.gid2cell(i+num_cell_input).soma {
 			    us_tmp = new NetStim()
@@ -103,7 +103,7 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
     sponFire = new List()
     
     for i=0, num_cell_full-1 {
-	if(i<num_cell_input_e || i>=num_cell_input){
+	if(i<num_ecell_input || i>=num_cell_input){
 	    if(pc.gid_exists(i)){
 		pc.gid2cell(i).soma{
 		    spon_tmp = new GammaNoise(0.85)
@@ -118,7 +118,7 @@ proc setStim(){local i, j, stim_num, num_vta, dur, num_cs, stim_int, num_ecell_i
 		    }else if(i>=num_cell_input && i<num_cell_input+num_cell_out1_e){
 			spon_tmp.KAPPA = OUT1_SPON_E_K
 			spon_tmp.THETA = OUT1_SPON_E_T
-		    }else if(i>=num_cell_input+num_cell_out1 && i<num_cell_input+num_cell_e_out2){
+		    }else if(i>=num_cell_input+num_cell_out1 && i<num_cell_input+num_cell_out2_e){
 			spon_tmp.KAPPA = 0.15
 		    }else{
 			spon_tmp.KAPPA = 0.11

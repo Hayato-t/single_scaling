@@ -85,6 +85,8 @@ printf("finish connect section\n")
 
 setStim(stimNum, NCELL_VTA, dur, NCELL_CS,stimInt,NCELL_E,LEARNING_TIMES,START_STIM,NCELL_FULL,NCELL_OUT1,NCELL_OUT1_E,NCELL_OUT2,NCELL_OUT2_E,NCELL,SECTION_OUT1_E,SECTION_OUT1_I)
 
+
+
 objref tvec, idvec
 
 proc setSpikeRecord() {local i localobj nc, nil
